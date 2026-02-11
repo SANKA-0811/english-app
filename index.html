@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EnglishQuest - 英語学習アプリ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green: #58cc02;
+      --green-dark: #46a302;
+      --blue: #1cb0f6;
+      --blue-dark: #1899d6;
+      --red: #ff4b4b;
+      --red-dark: #ea2b2b;
+      --orange: #ff9600;
+      --purple: #ce82ff;
+      --yellow: #ffc800;
+      --gray-light: #e5e5e5;
+      --gray-med: #afafaf;
+      --gray-dark: #4b4b4b;
+      --bg: #131f24;
+      --bg-card: #1a2b32;
+      --bg-hover: #233a44;
+      --white: #ffffff;
+      --text: #e5e5e5;
+      --text-dim: #8a9ba3;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Top Navigation Bar ===== */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--bg-card);
+      border-bottom: 2px solid #2a3f48;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      z-index: 100;
+      padding: 0 16px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: default;
+    }
+
+    .stat-icon { font-size: 20px; }
+    .stat-fire { color: var(--orange); }
+    .stat-xp { color: var(--yellow); }
+    .stat-heart { color: var(--red); }
+    .stat-gem { color: var(--blue); }
+
+    /* ===== Screen Management ===== */
+    .screen { display: none; padding-top: 72px; padding-bottom: 80px; }
+    .screen.active { display: block; }
+
+    /* ===== Home Screen - Lesson Path ===== */
+    .lesson-path {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 20px 16px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      background: var(--green);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .section-header.locked {
+      background: var(--gray-med);
+    }
+
+    .lesson-node {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.3);
+    }
+
+    .lesson-node:hover:not(.locked) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 rgba(0,0,0,0.3);
+    }
+
+    .lesson-node:active:not(.locked) {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    }
+
+    .lesson-node.available { background: var(--green); }
+    .lesson-node.completed { background: var(--yellow); }
+    .lesson-node.locked { background: #3a4a52; cursor: not-allowed; opacity: 0.6; }
+
+    .lesson-node .crown {
+      position: absolute;
+      top: -14px;
+      font-size: 22px;
+    }
+
+    .lesson-node .progress-ring {
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.2);
+    }
+
+    .node-offset-left { margin-left: -60px; }
+    .node-offset-right { margin-right: -60px; }
+
+    .lesson-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: -12px;
+      font-weight: 600;
+    }
+
+    /* ===== Quiz Screen ===== */
+    .quiz-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .quiz-progress-bar {
+      width: 100%;
+      height: 16px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      border: 2px solid #2a3f48;
+    }
+
+    .quiz-progress-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 10px;
+      transition: width 0.4s ease;
+    }
+
+    .quiz-close-btn {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 28px;
+      cursor: pointer;
+      z-index: 200;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    .quiz-close-btn:hover { background: var(--bg-hover); }
+
+    .question-type {
+      font-size: 14px;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .question-text {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .question-sub {
+      font-size: 16px;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+    }
+
+    .speaker-btn {
+      background: var(--bg-hover);
+      border: 2px solid #2a3f48;
+      color: var(--blue);
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      font-size: 32px;
+      cursor: pointer;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .speaker-btn:hover { background: rgba(28,176,246,0.1); border-color: var(--blue); }
+
+    /* Choice Buttons */
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .choice-btn {
+      width: 100%;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 2px solid #2a3f48;
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .choice-btn:hover { background: var(--bg-hover); border-color: #3a5560; }
+
+    .choice-btn .choice-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 2px solid #3a5560;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .choice-btn.selected {
+      border-color: var(--blue);
+      background: rgba(28,176,246,0.1);
+    }
+
+    .choice-btn.selected .choice-num {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: white;
+    }
+
+    .choice-btn.correct {
+      border-color: var(--green);
+      background: rgba(88,204,2,0.15);
+    }
+
+    .choice-btn.incorrect {
+      border-color: var(--red);
+      background: rgba(255,75,75,0.15);
+    }
+
+    /* Text Input Questions */
+    .text-input-area {
+      width: 100%;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 2px solid #2a3f48;
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      margin-bottom: 24px;
+      resize: none;
+      font-family: inherit;
+    }
+
+    .text-input-area:focus { border-color: var(--blue); }
+
+    /* Word Bank */
+    .word-bank {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      min-height: 56px;
+      padding: 12px;
+      background: var(--bg-card);
+      border: 2px dashed #2a3f48;
+      border-radius: 16px;
+    }
+
+    .word-bank.answer-area {
+      border-style: solid;
+      border-color: var(--blue);
+      min-height: 64px;
+      margin-bottom: 24px;
+    }
+
+    .word-chip {
+      padding: 10px 16px;
+      background: var(--bg-hover);
+      border: 2px solid #3a5560;
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .word-chip:hover { background: rgba(28,176,246,0.1); border-color: var(--blue); }
+    .word-chip.used { opacity: 0.3; pointer-events: none; }
+    .word-chip.in-answer { background: var(--blue); border-color: var(--blue); color: white; }
+
+    /* Check Button */
+    .check-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: none;
+      font-size: 17px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .check-btn.active {
+      background: var(--green);
+      color: white;
+      box-shadow: 0 4px 0 var(--green-dark);
+    }
+
+    .check-btn.active:hover { filter: brightness(1.05); }
+    .check-btn.active:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--green-dark); }
+
+    .check-btn.disabled {
+      background: #2a3f48;
+      color: #4a5a62;
+      cursor: not-allowed;
+    }
+
+    .check-btn.next {
+      background: var(--green);
+      color: white;
+      box-shadow: 0 4px 0 var(--green-dark);
+    }
+
+    /* Feedback Bar */
+    .feedback-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px 24px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 150;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .feedback-bar.correct {
+      background: #1a3a1a;
+      border-top: 2px solid var(--green);
+      display: flex;
+    }
+
+    .feedback-bar.incorrect {
+      background: #3a1a1a;
+      border-top: 2px solid var(--red);
+      display: flex;
+    }
+
+    .feedback-icon { font-size: 32px; margin-right: 12px; }
+    .feedback-text { font-weight: 700; font-size: 18px; }
+    .feedback-detail { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+
+    .feedback-continue {
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .feedback-bar.correct .feedback-continue {
+      background: var(--green);
+      color: white;
+    }
+
+    .feedback-bar.incorrect .feedback-continue {
+      background: var(--red);
+      color: white;
+    }
+
+    /* ===== Lesson Complete Screen ===== */
+    .complete-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .complete-screen.active { display: flex; }
+
+    .complete-trophy { font-size: 80px; margin-bottom: 24px; animation: bounce 0.5s ease; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .complete-title {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--yellow);
+      margin-bottom: 8px;
+    }
+
+    .complete-sub {
+      font-size: 16px;
+      color: var(--text-dim);
+      margin-bottom: 40px;
+    }
+
+    .complete-stats {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+
+    .complete-stat {
+      text-align: center;
+    }
+
+    .complete-stat-value {
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .complete-stat-value.xp-color { color: var(--yellow); }
+    .complete-stat-value.acc-color { color: var(--green); }
+    .complete-stat-value.streak-color { color: var(--orange); }
+
+    .complete-stat-label {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .continue-btn {
+      width: 100%;
+      max-width: 340px;
+      padding: 16px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-size: 17px;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--green-dark);
+      letter-spacing: 1px;
+    }
+
+    .continue-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 var(--green-dark);
+    }
+
+    /* ===== Bottom Navigation ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 68px;
+      background: var(--bg-card);
+      border-top: 2px solid #2a3f48;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+
+    .bottom-nav.hidden { display: none; }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: all 0.15s;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .nav-btn.active { color: var(--blue); }
+    .nav-btn .nav-icon { font-size: 26px; }
+
+    /* ===== Profile Screen ===== */
+    .profile-container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .profile-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin: 0 auto 16px;
+      border: 4px solid var(--yellow);
+    }
+
+    .profile-name {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .profile-level {
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 2px solid #2a3f48;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-card-value {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .stat-card-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .achievements-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .achievement-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg-card);
+      border: 2px solid #2a3f48;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .achievement-icon {
+      font-size: 36px;
+      flex-shrink: 0;
+    }
+
+    .achievement-info { flex: 1; }
+    .achievement-name { font-weight: 700; font-size: 15px; }
+    .achievement-desc { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+    .achievement-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #2a3f48;
+      border-radius: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .achievement-progress-fill {
+      height: 100%;
+      background: var(--yellow);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    /* ===== Review Screen ===== */
+    .review-container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .review-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .review-sub {
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+
+    .vocab-card {
+      background: var(--bg-card);
+      border: 2px solid #2a3f48;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .vocab-card:hover { border-color: #3a5560; }
+
+    .vocab-word {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .vocab-meaning {
+      color: var(--text-dim);
+      font-size: 15px;
+    }
+
+    .vocab-strength {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .strength-bar {
+      width: 32px;
+      height: 6px;
+      border-radius: 3px;
+      background: #2a3f48;
+    }
+
+    .strength-bar.filled { background: var(--yellow); }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .question-text { font-size: 20px; }
+      .complete-stats { gap: 20px; }
+      .complete-stat-value { font-size: 28px; }
+    }
+
+    /* Matching Pairs */
+    .matching-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .match-btn {
+      padding: 16px;
+      background: var(--bg-card);
+      border: 2px solid #2a3f48;
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .match-btn:hover { border-color: #3a5560; }
+    .match-btn.selected { border-color: var(--blue); background: rgba(28,176,246,0.1); }
+    .match-btn.matched { border-color: var(--green); background: rgba(88,204,2,0.1); opacity: 0.6; pointer-events: none; }
+    .match-btn.wrong { border-color: var(--red); background: rgba(255,75,75,0.1); animation: shake 0.3s; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Hearts animation */
+    .heart-lost { animation: heartPulse 0.3s ease; }
+
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Top Bar ===== -->
+  <div class="top-bar" id="topBar">
+    <div class="stat-item">
+      <span class="stat-icon stat-fire">🔥</span>
+      <span id="streakCount">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon stat-xp">⚡</span>
+      <span id="xpCount">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon stat-heart">❤️</span>
+      <span id="heartCount">5</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon stat-gem">💎</span>
+      <span id="gemCount">50</span>
+    </div>
+  </div>
+
+  <!-- ===== Home Screen ===== -->
+  <div class="screen active" id="homeScreen">
+    <div class="lesson-path" id="lessonPath">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ===== Quiz Screen ===== -->
+  <div class="screen" id="quizScreen">
+    <button class="quiz-close-btn" onclick="exitQuiz()">✕</button>
+    <div class="quiz-container">
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill" id="quizProgressFill"></div>
+      </div>
+      <div id="questionArea">
+        <!-- Populated by JS -->
+      </div>
+      <button class="check-btn disabled" id="checkBtn" onclick="checkAnswer()">判定する</button>
+    </div>
+  </div>
+
+  <!-- ===== Lesson Complete Screen ===== -->
+  <div class="complete-screen" id="completeScreen">
+    <div class="complete-trophy">🏆</div>
+    <div class="complete-title">レッスン完了!</div>
+    <div class="complete-sub" id="completeSub"></div>
+    <div class="complete-stats">
+      <div class="complete-stat">
+        <div class="complete-stat-value xp-color" id="completeXp">+15</div>
+        <div class="complete-stat-label">XP獲得</div>
+      </div>
+      <div class="complete-stat">
+        <div class="complete-stat-value acc-color" id="completeAcc">100%</div>
+        <div class="complete-stat-label">正答率</div>
+      </div>
+      <div class="complete-stat">
+        <div class="complete-stat-value streak-color" id="completeStreak">1</div>
+        <div class="complete-stat-label">連続日数</div>
+      </div>
+    </div>
+    <button class="continue-btn" onclick="returnHome()">続ける</button>
+  </div>
+
+  <!-- ===== Profile Screen ===== -->
+  <div class="screen" id="profileScreen">
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-avatar">🦉</div>
+        <div class="profile-name">学習者</div>
+        <div class="profile-level" id="profileLevel">レベル 1</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-value xp-color" id="profileXp">0</div>
+          <div class="stat-card-label">総合XP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value streak-color" id="profileStreak">0</div>
+          <div class="stat-card-label">連続日数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value acc-color" id="profileLessons">0</div>
+          <div class="stat-card-label">完了レッスン</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value" style="color:var(--purple)" id="profileWords">0</div>
+          <div class="stat-card-label">学習単語数</div>
+        </div>
+      </div>
+      <div class="achievements-title">実績</div>
+      <div id="achievementsList">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Review Screen ===== -->
+  <div class="screen" id="reviewScreen">
+    <div class="review-container">
+      <div class="review-title">単語リスト</div>
+      <div class="review-sub">学習した単語を復習しましょう</div>
+      <div id="vocabList">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Feedback Bar ===== -->
+  <div class="feedback-bar" id="feedbackBar">
+    <div>
+      <div style="display:flex;align-items:center">
+        <span class="feedback-icon" id="feedbackIcon"></span>
+        <span class="feedback-text" id="feedbackText"></span>
+      </div>
+      <div class="feedback-detail" id="feedbackDetail"></div>
+    </div>
+    <button class="feedback-continue" id="feedbackContinue" onclick="nextQuestion()">続ける</button>
+  </div>
+
+  <!-- ===== Bottom Navigation ===== -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-btn active" onclick="showScreen('home')" id="navHome">
+      <span class="nav-icon">🏠</span>
+      ホーム
+    </button>
+    <button class="nav-btn" onclick="showScreen('review')" id="navReview">
+      <span class="nav-icon">📖</span>
+      復習
+    </button>
+    <button class="nav-btn" onclick="showScreen('profile')" id="navProfile">
+      <span class="nav-icon">👤</span>
+      プロフィール
+    </button>
+  </div>
+
+  <script>
+    // ===== LESSON & QUESTION DATA =====
+    const lessons = [
+      {
+        section: "基礎 1",
+        units: [
+          {
+            id: 1,
+            name: "あいさつ",
+            questions: [
+              {
+                type: "multipleChoice",
+                question: '「こんにちは」は英語で何ですか？',
+                choices: ["Hello", "Goodbye", "Thank you", "Sorry"],
+                correct: 0,
+                vocab: { word: "Hello", meaning: "こんにちは" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「ありがとう」は英語で何ですか？',
+                choices: ["Please", "Sorry", "Thank you", "Hello"],
+                correct: 2,
+                vocab: { word: "Thank you", meaning: "ありがとう" }
+              },
+              {
+                type: "translate",
+                question: "「Good morning」の意味は？",
+                choices: ["こんばんは", "おはようございます", "おやすみなさい", "さようなら"],
+                correct: 1,
+                vocab: { word: "Good morning", meaning: "おはようございます" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「さようなら」は英語で何ですか？',
+                choices: ["Hello", "Please", "Goodbye", "Thanks"],
+                correct: 2,
+                vocab: { word: "Goodbye", meaning: "さようなら" }
+              },
+              {
+                type: "fillBlank",
+                question: "Good _____, nice to meet you.",
+                hint: "「こんにちは、はじめまして」",
+                answer: "afternoon",
+                vocab: { word: "Good afternoon", meaning: "こんにちは（午後）" }
+              }
+            ]
+          },
+          {
+            id: 2,
+            name: "自己紹介",
+            questions: [
+              {
+                type: "multipleChoice",
+                question: '"My name is Tanaka" の意味は？',
+                choices: ["私の名前は田中です", "田中さんこんにちは", "田中は友達です", "私は田中が好きです"],
+                correct: 0,
+                vocab: { word: "My name is...", meaning: "私の名前は..." }
+              },
+              {
+                type: "multipleChoice",
+                question: '「私は学生です」は英語で？',
+                choices: ["I am a teacher", "I am a student", "I am a doctor", "I am a friend"],
+                correct: 1,
+                vocab: { word: "student", meaning: "学生" }
+              },
+              {
+                type: "translate",
+                question: '"Nice to meet you" の意味は？',
+                choices: ["またね", "はじめまして", "お元気ですか", "ありがとう"],
+                correct: 1,
+                vocab: { word: "Nice to meet you", meaning: "はじめまして" }
+              },
+              {
+                type: "wordBank",
+                question: "「私は日本出身です」を英語に並べ替えてください",
+                words: ["I", "from", "am", "Japan"],
+                answer: ["I", "am", "from", "Japan"],
+                vocab: { word: "I am from...", meaning: "私は...出身です" }
+              },
+              {
+                type: "fillBlank",
+                question: "I _____ 25 years old.",
+                hint: "「私は25歳です」",
+                answer: "am",
+                vocab: { word: "I am ... years old", meaning: "私は...歳です" }
+              }
+            ]
+          },
+          {
+            id: 3,
+            name: "数字",
+            questions: [
+              {
+                type: "matching",
+                question: "英語と日本語をマッチングしてください",
+                pairs: [
+                  { en: "One", ja: "1 (いち)" },
+                  { en: "Two", ja: "2 (に)" },
+                  { en: "Three", ja: "3 (さん)" },
+                  { en: "Four", ja: "4 (し)" }
+                ],
+                vocab: { word: "one, two, three, four", meaning: "1, 2, 3, 4" }
+              },
+              {
+                type: "multipleChoice",
+                question: '"Seven" は日本語で何ですか？',
+                choices: ["5", "6", "7", "8"],
+                correct: 2,
+                vocab: { word: "Seven", meaning: "7" }
+              },
+              {
+                type: "translate",
+                question: '"Ten" の意味は？',
+                choices: ["8", "9", "10", "11"],
+                correct: 2,
+                vocab: { word: "Ten", meaning: "10" }
+              },
+              {
+                type: "fillBlank",
+                question: "There are _____ days in a week.",
+                hint: "「1週間は7日です」",
+                answer: "seven",
+                vocab: { word: "seven", meaning: "7" }
+              },
+              {
+                type: "multipleChoice",
+                question: '"Twenty" は何ですか？',
+                choices: ["12", "15", "20", "30"],
+                correct: 2,
+                vocab: { word: "Twenty", meaning: "20" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        section: "基礎 2",
+        units: [
+          {
+            id: 4,
+            name: "食べ物",
+            questions: [
+              {
+                type: "multipleChoice",
+                question: '"Apple" は何ですか？',
+                choices: ["バナナ", "りんご", "みかん", "ぶどう"],
+                correct: 1,
+                vocab: { word: "Apple", meaning: "りんご" }
+              },
+              {
+                type: "translate",
+                question: '"I like sushi" の意味は？',
+                choices: ["寿司を作ります", "寿司が好きです", "寿司を食べます", "寿司は美味しい"],
+                correct: 1,
+                vocab: { word: "I like...", meaning: "...が好きです" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「水」は英語で何ですか？',
+                choices: ["Juice", "Milk", "Water", "Tea"],
+                correct: 2,
+                vocab: { word: "Water", meaning: "水" }
+              },
+              {
+                type: "wordBank",
+                question: "「私はコーヒーが欲しいです」を英語にしてください",
+                words: ["I", "coffee", "want", "please"],
+                answer: ["I", "want", "coffee", "please"],
+                vocab: { word: "I want...", meaning: "...が欲しいです" }
+              },
+              {
+                type: "fillBlank",
+                question: "This _____ is delicious!",
+                hint: "「この食べ物は美味しい！」",
+                answer: "food",
+                vocab: { word: "food", meaning: "食べ物" }
+              }
+            ]
+          },
+          {
+            id: 5,
+            name: "家族",
+            questions: [
+              {
+                type: "matching",
+                question: "家族の英語をマッチングしてください",
+                pairs: [
+                  { en: "Mother", ja: "お母さん" },
+                  { en: "Father", ja: "お父さん" },
+                  { en: "Sister", ja: "姉妹" },
+                  { en: "Brother", ja: "兄弟" }
+                ],
+                vocab: { word: "family", meaning: "家族" }
+              },
+              {
+                type: "multipleChoice",
+                question: '"Grandmother" は何ですか？',
+                choices: ["おばさん", "おばあさん", "お母さん", "姉"],
+                correct: 1,
+                vocab: { word: "Grandmother", meaning: "おばあさん" }
+              },
+              {
+                type: "translate",
+                question: '"I have two brothers" の意味は？',
+                choices: ["兄弟が2人います", "友達が2人います", "姉妹が2人います", "2人の子供がいます"],
+                correct: 0,
+                vocab: { word: "I have...", meaning: "...がいます/あります" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「息子」は英語で何ですか？',
+                choices: ["Daughter", "Son", "Uncle", "Cousin"],
+                correct: 1,
+                vocab: { word: "Son", meaning: "息子" }
+              },
+              {
+                type: "fillBlank",
+                question: "My _____ is a teacher.",
+                hint: "「私の父は先生です」",
+                answer: "father",
+                vocab: { word: "father", meaning: "お父さん" }
+              }
+            ]
+          },
+          {
+            id: 6,
+            name: "色",
+            questions: [
+              {
+                type: "multipleChoice",
+                question: '"Red" は何色ですか？',
+                choices: ["青", "赤", "緑", "黄"],
+                correct: 1,
+                vocab: { word: "Red", meaning: "赤" }
+              },
+              {
+                type: "matching",
+                question: "色をマッチングしてください",
+                pairs: [
+                  { en: "Blue", ja: "青" },
+                  { en: "Green", ja: "緑" },
+                  { en: "Yellow", ja: "黄" },
+                  { en: "White", ja: "白" }
+                ],
+                vocab: { word: "colors", meaning: "色" }
+              },
+              {
+                type: "translate",
+                question: '"The sky is blue" の意味は？',
+                choices: ["空は白い", "空は青い", "海は青い", "花は青い"],
+                correct: 1,
+                vocab: { word: "sky", meaning: "空" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「黒」は英語で何ですか？',
+                choices: ["White", "Gray", "Brown", "Black"],
+                correct: 3,
+                vocab: { word: "Black", meaning: "黒" }
+              },
+              {
+                type: "wordBank",
+                question: "「私の好きな色は青です」を英語にしてください",
+                words: ["color", "My", "is", "blue", "favorite"],
+                answer: ["My", "favorite", "color", "is", "blue"],
+                vocab: { word: "favorite", meaning: "お気に入りの" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        section: "中級 1",
+        units: [
+          {
+            id: 7,
+            name: "日常動作",
+            questions: [
+              {
+                type: "multipleChoice",
+                question: '"I eat breakfast every day" の意味は？',
+                choices: ["毎日昼食を食べます", "毎日朝食を食べます", "毎日夕食を食べます", "毎日おやつを食べます"],
+                correct: 1,
+                vocab: { word: "breakfast", meaning: "朝食" }
+              },
+              {
+                type: "translate",
+                question: '"She reads a book" の意味は？',
+                choices: ["彼女は本を読む", "彼女は本を買う", "彼女は本を書く", "彼女は本を借りる"],
+                correct: 0,
+                vocab: { word: "read", meaning: "読む" }
+              },
+              {
+                type: "fillBlank",
+                question: "I _____ to school by bus.",
+                hint: "「私はバスで学校に行きます」",
+                answer: "go",
+                vocab: { word: "go", meaning: "行く" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「走る」は英語で何ですか？',
+                choices: ["Walk", "Run", "Jump", "Swim"],
+                correct: 1,
+                vocab: { word: "Run", meaning: "走る" }
+              },
+              {
+                type: "wordBank",
+                question: "「彼は毎朝コーヒーを飲みます」を英語にしてください",
+                words: ["He", "every", "drinks", "morning", "coffee"],
+                answer: ["He", "drinks", "coffee", "every", "morning"],
+                vocab: { word: "drink", meaning: "飲む" }
+              }
+            ]
+          },
+          {
+            id: 8,
+            name: "場所",
+            questions: [
+              {
+                type: "matching",
+                question: "場所をマッチングしてください",
+                pairs: [
+                  { en: "School", ja: "学校" },
+                  { en: "Hospital", ja: "病院" },
+                  { en: "Station", ja: "駅" },
+                  { en: "Park", ja: "公園" }
+                ],
+                vocab: { word: "places", meaning: "場所" }
+              },
+              {
+                type: "multipleChoice",
+                question: '"Library" は何ですか？',
+                choices: ["本屋", "図書館", "学校", "病院"],
+                correct: 1,
+                vocab: { word: "Library", meaning: "図書館" }
+              },
+              {
+                type: "translate",
+                question: '"Where is the station?" の意味は？',
+                choices: ["駅はどこですか？", "駅は近いですか？", "駅は大きいですか？", "駅に行きますか？"],
+                correct: 0,
+                vocab: { word: "Where is...?", meaning: "...はどこですか？" }
+              },
+              {
+                type: "fillBlank",
+                question: "The _____ is next to the bank.",
+                hint: "「郵便局は銀行の隣にあります」",
+                answer: "post office",
+                vocab: { word: "post office", meaning: "郵便局" }
+              },
+              {
+                type: "multipleChoice",
+                question: '「レストラン」は英語で何ですか？',
+                choices: ["Restaurant", "Restrant", "Resturant", "Restraunt"],
+                correct: 0,
+                vocab: { word: "Restaurant", meaning: "レストラン" }
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // ===== STATE =====
+    let state = {
+      xp: 0,
+      streak: 0,
+      hearts: 5,
+      gems: 50,
+      completedLessons: [],
+      learnedVocab: [],
+      lastPlayDate: null,
+      currentLesson: null,
+      currentQuestionIndex: 0,
+      correctInLesson: 0,
+      totalInLesson: 0,
+      selectedAnswer: null,
+      answerChecked: false,
+      matchingState: null,
+      wordBankAnswer: []
+    };
+
+    // Load state from localStorage
+    function loadState() {
+      const saved = localStorage.getItem('englishquest_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.assign(state, parsed);
+      }
+      checkStreak();
+    }
+
+    function saveState() {
+      localStorage.setItem('englishquest_state', JSON.stringify({
+        xp: state.xp,
+        streak: state.streak,
+        hearts: state.hearts,
+        gems: state.gems,
+        completedLessons: state.completedLessons,
+        learnedVocab: state.learnedVocab,
+        lastPlayDate: state.lastPlayDate
+      }));
+    }
+
+    function checkStreak() {
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      if (state.lastPlayDate === today) return;
+      if (state.lastPlayDate === yesterday) return;
+      if (state.lastPlayDate && state.lastPlayDate !== today && state.lastPlayDate !== yesterday) {
+        state.streak = 0;
+      }
+    }
+
+    function updateTopBar() {
+      document.getElementById('streakCount').textContent = state.streak;
+      document.getElementById('xpCount').textContent = state.xp;
+      document.getElementById('heartCount').textContent = state.hearts;
+      document.getElementById('gemCount').textContent = state.gems;
+    }
+
+    // ===== SCREEN NAVIGATION =====
+    function showScreen(name) {
+      document.querySelectorAll('.screen, .complete-screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      if (name === 'home') {
+        document.getElementById('homeScreen').classList.add('active');
+        document.getElementById('navHome').classList.add('active');
+        document.getElementById('bottomNav').classList.remove('hidden');
+        document.getElementById('topBar').style.display = 'flex';
+        renderLessonPath();
+      } else if (name === 'quiz') {
+        document.getElementById('quizScreen').classList.add('active');
+        document.getElementById('bottomNav').classList.add('hidden');
+        document.getElementById('topBar').style.display = 'none';
+      } else if (name === 'complete') {
+        document.getElementById('completeScreen').classList.add('active');
+        document.getElementById('bottomNav').classList.add('hidden');
+        document.getElementById('topBar').style.display = 'none';
+      } else if (name === 'profile') {
+        document.getElementById('profileScreen').classList.add('active');
+        document.getElementById('navProfile').classList.add('active');
+        document.getElementById('bottomNav').classList.remove('hidden');
+        document.getElementById('topBar').style.display = 'flex';
+        renderProfile();
+      } else if (name === 'review') {
+        document.getElementById('reviewScreen').classList.add('active');
+        document.getElementById('navReview').classList.add('active');
+        document.getElementById('bottomNav').classList.remove('hidden');
+        document.getElementById('topBar').style.display = 'flex';
+        renderVocabList();
+      }
+
+      document.getElementById('feedbackBar').className = 'feedback-bar';
+      document.getElementById('feedbackBar').style.display = 'none';
+    }
+
+    // ===== LESSON PATH =====
+    function getAllUnits() {
+      const units = [];
+      lessons.forEach(section => {
+        section.units.forEach(unit => units.push({ ...unit, section: section.section }));
+      });
+      return units;
+    }
+
+    function renderLessonPath() {
+      const path = document.getElementById('lessonPath');
+      path.innerHTML = '';
+      let currentSection = '';
+      const units = getAllUnits();
+
+      units.forEach((unit, i) => {
+        if (unit.section !== currentSection) {
+          currentSection = unit.section;
+          const isLocked = i > 0 && !state.completedLessons.includes(units[i - 1].id) && !state.completedLessons.includes(unit.id);
+          const header = document.createElement('div');
+          header.className = `section-header${isLocked ? ' locked' : ''}`;
+          header.textContent = currentSection;
+          path.appendChild(header);
+        }
+
+        const isCompleted = state.completedLessons.includes(unit.id);
+        const prevCompleted = i === 0 || state.completedLessons.includes(units[i - 1].id);
+        const isAvailable = prevCompleted && !isCompleted;
+        const isLocked = !isCompleted && !isAvailable;
+
+        const offsets = ['', 'node-offset-left', '', 'node-offset-right'];
+        const offsetClass = offsets[i % 4];
+
+        const node = document.createElement('button');
+        node.className = `lesson-node ${isCompleted ? 'completed' : isAvailable ? 'available' : 'locked'} ${offsetClass}`;
+
+        if (isCompleted) {
+          node.innerHTML = `<span class="crown">👑</span>✓`;
+        } else if (isAvailable) {
+          node.innerHTML = `⭐`;
+        } else {
+          node.innerHTML = `🔒`;
+        }
+
+        if (!isLocked) {
+          node.onclick = () => startLesson(unit.id);
+        }
+
+        path.appendChild(node);
+
+        const label = document.createElement('div');
+        label.className = `lesson-label ${offsetClass}`;
+        label.textContent = unit.name;
+        path.appendChild(label);
+      });
+    }
+
+    // ===== QUIZ LOGIC =====
+    function startLesson(unitId) {
+      const units = getAllUnits();
+      const unit = units.find(u => u.id === unitId);
+      if (!unit) return;
+
+      state.currentLesson = unit;
+      state.currentQuestionIndex = 0;
+      state.correctInLesson = 0;
+      state.totalInLesson = unit.questions.length;
+      state.selectedAnswer = null;
+      state.answerChecked = false;
+
+      if (state.hearts <= 0) {
+        state.hearts = 5;
+        updateTopBar();
+      }
+
+      showScreen('quiz');
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const unit = state.currentLesson;
+      const q = unit.questions[state.currentQuestionIndex];
+      const area = document.getElementById('questionArea');
+      const progress = ((state.currentQuestionIndex) / state.totalInLesson) * 100;
+      document.getElementById('quizProgressFill').style.width = progress + '%';
+
+      state.selectedAnswer = null;
+      state.answerChecked = false;
+      state.matchingState = null;
+      state.wordBankAnswer = [];
+      document.getElementById('checkBtn').className = 'check-btn disabled';
+      document.getElementById('checkBtn').textContent = '判定する';
+      document.getElementById('feedbackBar').className = 'feedback-bar';
+      document.getElementById('feedbackBar').style.display = 'none';
+
+      let html = '';
+
+      switch (q.type) {
+        case 'multipleChoice':
+        case 'translate':
+          html += `<div class="question-type">${q.type === 'translate' ? '翻訳問題' : '選択問題'}</div>`;
+          html += `<div class="question-text">${q.question}</div>`;
+          html += `<div class="choices">`;
+          q.choices.forEach((c, i) => {
+            html += `<button class="choice-btn" onclick="selectChoice(${i})" id="choice${i}">
+              <span class="choice-num">${i + 1}</span>
+              ${c}
+            </button>`;
+          });
+          html += `</div>`;
+          break;
+
+        case 'fillBlank':
+          html += `<div class="question-type">穴埋め問題</div>`;
+          html += `<div class="question-text">${q.question}</div>`;
+          html += `<div class="question-sub">${q.hint}</div>`;
+          html += `<input type="text" class="text-input-area" id="fillInput" placeholder="答えを入力してください..." oninput="onFillInput()" autocomplete="off" autocapitalize="off">`;
+          break;
+
+        case 'wordBank':
+          html += `<div class="question-type">並べ替え問題</div>`;
+          html += `<div class="question-text">${q.question}</div>`;
+          html += `<div class="word-bank answer-area" id="answerBank"></div>`;
+          const shuffled = [...q.words].sort(() => Math.random() - 0.5);
+          html += `<div class="word-bank" id="wordBankSource">`;
+          shuffled.forEach((w, i) => {
+            html += `<span class="word-chip" onclick="addWord(this, '${w}', ${i})" id="srcWord${i}" data-word="${w}">${w}</span>`;
+          });
+          html += `</div>`;
+          break;
+
+        case 'matching':
+          html += `<div class="question-type">マッチング問題</div>`;
+          html += `<div class="question-text">${q.question}</div>`;
+          const shuffledJa = [...q.pairs].sort(() => Math.random() - 0.5);
+          state.matchingState = {
+            pairs: q.pairs,
+            shuffledJa: shuffledJa,
+            selectedEn: null,
+            selectedJa: null,
+            matched: []
+          };
+          html += `<div class="matching-grid">`;
+          html += `<div>`;
+          q.pairs.forEach((p, i) => {
+            html += `<button class="match-btn" style="margin-bottom:8px" onclick="selectMatchEn(${i})" id="matchEn${i}">${p.en}</button>`;
+          });
+          html += `</div><div>`;
+          shuffledJa.forEach((p, i) => {
+            html += `<button class="match-btn" style="margin-bottom:8px" onclick="selectMatchJa(${i})" id="matchJa${i}">${p.ja}</button>`;
+          });
+          html += `</div></div>`;
+          break;
+      }
+
+      area.innerHTML = html;
+
+      if (q.type === 'fillBlank') {
+        setTimeout(() => document.getElementById('fillInput')?.focus(), 100);
+      }
+    }
+
+    function selectChoice(index) {
+      if (state.answerChecked) return;
+      state.selectedAnswer = index;
+      document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+        btn.classList.toggle('selected', i === index);
+      });
+      document.getElementById('checkBtn').className = 'check-btn active';
+    }
+
+    function onFillInput() {
+      const val = document.getElementById('fillInput').value.trim();
+      document.getElementById('checkBtn').className = val ? 'check-btn active' : 'check-btn disabled';
+      state.selectedAnswer = val;
+    }
+
+    function addWord(el, word, srcIndex) {
+      if (state.answerChecked) return;
+      el.classList.add('used');
+      state.wordBankAnswer.push({ word, srcIndex });
+      renderAnswerBank();
+      document.getElementById('checkBtn').className = state.wordBankAnswer.length > 0 ? 'check-btn active' : 'check-btn disabled';
+    }
+
+    function removeWord(answerIndex) {
+      if (state.answerChecked) return;
+      const removed = state.wordBankAnswer.splice(answerIndex, 1)[0];
+      document.getElementById(`srcWord${removed.srcIndex}`).classList.remove('used');
+      renderAnswerBank();
+      document.getElementById('checkBtn').className = state.wordBankAnswer.length > 0 ? 'check-btn active' : 'check-btn disabled';
+    }
+
+    function renderAnswerBank() {
+      const bank = document.getElementById('answerBank');
+      bank.innerHTML = state.wordBankAnswer.map((item, i) =>
+        `<span class="word-chip in-answer" onclick="removeWord(${i})">${item.word}</span>`
+      ).join('');
+    }
+
+    function selectMatchEn(index) {
+      if (state.answerChecked) return;
+      const ms = state.matchingState;
+      if (ms.matched.includes(index)) return;
+
+      document.querySelectorAll('[id^="matchEn"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById(`matchEn${index}`).classList.add('selected');
+      ms.selectedEn = index;
+
+      if (ms.selectedJa !== null) tryMatch();
+    }
+
+    function selectMatchJa(index) {
+      if (state.answerChecked) return;
+      const ms = state.matchingState;
+      const jaOriginal = ms.shuffledJa.findIndex(p => p === ms.shuffledJa[index]);
+      if (ms.matched.some(m => ms.shuffledJa[index] === ms.pairs[m])) return;
+
+      document.querySelectorAll('[id^="matchJa"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById(`matchJa${index}`).classList.add('selected');
+      ms.selectedJa = index;
+
+      if (ms.selectedEn !== null) tryMatch();
+    }
+
+    function tryMatch() {
+      const ms = state.matchingState;
+      const enPair = ms.pairs[ms.selectedEn];
+      const jaPair = ms.shuffledJa[ms.selectedJa];
+
+      if (enPair.en === jaPair.en) {
+        document.getElementById(`matchEn${ms.selectedEn}`).classList.add('matched');
+        document.getElementById(`matchJa${ms.selectedJa}`).classList.add('matched');
+        document.getElementById(`matchEn${ms.selectedEn}`).classList.remove('selected');
+        document.getElementById(`matchJa${ms.selectedJa}`).classList.remove('selected');
+        ms.matched.push(ms.selectedEn);
+
+        if (ms.matched.length === ms.pairs.length) {
+          state.selectedAnswer = 'allMatched';
+          document.getElementById('checkBtn').className = 'check-btn active';
+        }
+      } else {
+        document.getElementById(`matchEn${ms.selectedEn}`).classList.add('wrong');
+        document.getElementById(`matchJa${ms.selectedJa}`).classList.add('wrong');
+        setTimeout(() => {
+          document.getElementById(`matchEn${ms.selectedEn}`)?.classList.remove('wrong', 'selected');
+          document.getElementById(`matchJa${ms.selectedJa}`)?.classList.remove('wrong', 'selected');
+        }, 500);
+      }
+
+      ms.selectedEn = null;
+      ms.selectedJa = null;
+    }
+
+    function checkAnswer() {
+      if (state.answerChecked) return;
+      if (document.getElementById('checkBtn').classList.contains('disabled')) return;
+
+      const q = state.currentLesson.questions[state.currentQuestionIndex];
+      let isCorrect = false;
+
+      switch (q.type) {
+        case 'multipleChoice':
+        case 'translate':
+          isCorrect = state.selectedAnswer === q.correct;
+          document.getElementById(`choice${q.correct}`).classList.add('correct');
+          if (!isCorrect) {
+            document.getElementById(`choice${state.selectedAnswer}`).classList.add('incorrect');
+          }
+          break;
+
+        case 'fillBlank':
+          isCorrect = state.selectedAnswer.toLowerCase().trim() === q.answer.toLowerCase();
+          break;
+
+        case 'wordBank':
+          const userAnswer = state.wordBankAnswer.map(item => item.word);
+          isCorrect = JSON.stringify(userAnswer) === JSON.stringify(q.answer);
+          break;
+
+        case 'matching':
+          isCorrect = state.selectedAnswer === 'allMatched';
+          break;
+      }
+
+      state.answerChecked = true;
+
+      if (isCorrect) {
+        state.correctInLesson++;
+        showFeedback(true, '正解!');
+      } else {
+        state.hearts = Math.max(0, state.hearts - 1);
+        updateTopBar();
+        let detail = '';
+        if (q.type === 'fillBlank') detail = `正解: ${q.answer}`;
+        if (q.type === 'wordBank') detail = `正解: ${q.answer.join(' ')}`;
+        if (q.type === 'multipleChoice' || q.type === 'translate') detail = `正解: ${q.choices[q.correct]}`;
+        showFeedback(false, '不正解', detail);
+      }
+
+      // Track vocab
+      if (q.vocab && !state.learnedVocab.find(v => v.word === q.vocab.word)) {
+        state.learnedVocab.push({ ...q.vocab, strength: isCorrect ? 2 : 1 });
+      } else if (q.vocab) {
+        const v = state.learnedVocab.find(v => v.word === q.vocab.word);
+        if (v) v.strength = Math.min(5, v.strength + (isCorrect ? 1 : 0));
+      }
+
+      document.getElementById('checkBtn').style.display = 'none';
+    }
+
+    function showFeedback(correct, text, detail = '') {
+      const bar = document.getElementById('feedbackBar');
+      bar.className = `feedback-bar ${correct ? 'correct' : 'incorrect'}`;
+      bar.style.display = 'flex';
+      document.getElementById('feedbackIcon').textContent = correct ? '✅' : '❌';
+      document.getElementById('feedbackText').textContent = text;
+      document.getElementById('feedbackDetail').textContent = detail;
+    }
+
+    function nextQuestion() {
+      state.currentQuestionIndex++;
+
+      if (state.currentQuestionIndex >= state.totalInLesson) {
+        completeLesson();
+        return;
+      }
+
+      document.getElementById('checkBtn').style.display = '';
+      renderQuestion();
+    }
+
+    function completeLesson() {
+      const unit = state.currentLesson;
+      const xpEarned = state.correctInLesson * 3 + 5;
+      const accuracy = Math.round((state.correctInLesson / state.totalInLesson) * 100);
+
+      state.xp += xpEarned;
+      if (!state.completedLessons.includes(unit.id)) {
+        state.completedLessons.push(unit.id);
+      }
+
+      const today = new Date().toDateString();
+      if (state.lastPlayDate !== today) {
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (state.lastPlayDate === yesterday || !state.lastPlayDate) {
+          state.streak++;
+        } else {
+          state.streak = 1;
+        }
+        state.lastPlayDate = today;
+      }
+
+      state.gems += Math.floor(xpEarned / 3);
+
+      saveState();
+      updateTopBar();
+
+      document.getElementById('completeXp').textContent = `+${xpEarned}`;
+      document.getElementById('completeAcc').textContent = `${accuracy}%`;
+      document.getElementById('completeStreak').textContent = state.streak;
+      document.getElementById('completeSub').textContent = `「${unit.name}」をクリアしました！`;
+
+      showScreen('complete');
+    }
+
+    function returnHome() {
+      showScreen('home');
+    }
+
+    function exitQuiz() {
+      showScreen('home');
+    }
+
+    // ===== PROFILE =====
+    function renderProfile() {
+      const level = Math.floor(state.xp / 50) + 1;
+      document.getElementById('profileLevel').textContent = `レベル ${level}`;
+      document.getElementById('profileXp').textContent = state.xp;
+      document.getElementById('profileStreak').textContent = state.streak;
+      document.getElementById('profileLessons').textContent = state.completedLessons.length;
+      document.getElementById('profileWords').textContent = state.learnedVocab.length;
+
+      const achievements = [
+        { icon: '🌟', name: '初めの一歩', desc: '最初のレッスンを完了する', target: 1, current: state.completedLessons.length },
+        { icon: '🔥', name: '3日連続', desc: '3日連続で学習する', target: 3, current: state.streak },
+        { icon: '💯', name: 'XPマスター', desc: '100 XPを獲得する', target: 100, current: state.xp },
+        { icon: '📚', name: '単語コレクター', desc: '20単語を学習する', target: 20, current: state.learnedVocab.length },
+        { icon: '🏆', name: 'セクション完了', desc: '基礎1をすべて完了する', target: 3, current: state.completedLessons.filter(id => id <= 3).length },
+      ];
+
+      document.getElementById('achievementsList').innerHTML = achievements.map(a => {
+        const pct = Math.min(100, Math.round((a.current / a.target) * 100));
+        return `
+          <div class="achievement-item">
+            <div class="achievement-icon">${a.icon}</div>
+            <div class="achievement-info">
+              <div class="achievement-name">${a.name}</div>
+              <div class="achievement-desc">${a.desc}</div>
+              <div class="achievement-progress-bar">
+                <div class="achievement-progress-fill" style="width:${pct}%"></div>
+              </div>
+            </div>
+            <div style="font-weight:700;color:${pct >= 100 ? 'var(--green)' : 'var(--text-dim)'};font-size:13px">${a.current}/${a.target}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ===== VOCAB REVIEW =====
+    function renderVocabList() {
+      const list = document.getElementById('vocabList');
+      if (state.learnedVocab.length === 0) {
+        list.innerHTML = `<div style="text-align:center;color:var(--text-dim);padding:48px 0;">
+          <div style="font-size:48px;margin-bottom:16px">📖</div>
+          <div>まだ単語がありません。<br>レッスンを始めましょう！</div>
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = state.learnedVocab.map(v => {
+        const bars = Array.from({ length: 5 }, (_, i) =>
+          `<div class="strength-bar ${i < v.strength ? 'filled' : ''}"></div>`
+        ).join('');
+        return `
+          <div class="vocab-card">
+            <div class="vocab-word">${v.word}</div>
+            <div class="vocab-meaning">${v.meaning}</div>
+            <div class="vocab-strength">${bars}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ===== SPEECH SYNTHESIS =====
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.rate = 0.85;
+        speechSynthesis.speak(utter);
+      }
+    }
+
+    // ===== INIT =====
+    loadState();
+    updateTopBar();
+    renderLessonPath();
+  </script>
+</body>
+</html>
