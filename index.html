@@ -72,15 +72,63 @@
     .screen { display: none; padding-top: 72px; padding-bottom: 80px; }
     .screen.active { display: block; }
 
+    .home-content {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+
+    .daily-goal-card {
+      max-width: 400px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(88,204,2,0.16), rgba(28,176,246,0.14));
+      border: 2px solid #2a3f48;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .daily-goal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .daily-goal-progress {
+      width: 100%;
+      height: 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .daily-goal-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--green), #8de63a);
+      transition: width 0.3s ease;
+    }
+
+    .daily-goal-text {
+      margin-top: 8px;
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+    }
+
     /* ===== Home Screen - Lesson Path ===== */
     .lesson-path {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 24px;
-      padding: 20px 16px;
-      max-width: 400px;
-      margin: 0 auto;
     }
 
     .section-header {
@@ -797,8 +845,20 @@
 
   <!-- ===== Home Screen ===== -->
   <div class="screen active" id="homeScreen">
-    <div class="lesson-path" id="lessonPath">
-      <!-- Populated by JS -->
+    <div class="home-content">
+      <div class="daily-goal-card">
+        <div class="daily-goal-head">
+          <span>🎯 今日の目標</span>
+          <span id="dailyGoalValue">0/30 XP</span>
+        </div>
+        <div class="daily-goal-progress">
+          <div class="daily-goal-fill" id="dailyGoalFill"></div>
+        </div>
+        <div class="daily-goal-text" id="dailyGoalText">毎日30XPを目指して学習を続けましょう！</div>
+      </div>
+      <div class="lesson-path" id="lessonPath">
+        <!-- Populated by JS -->
+      </div>
     </div>
   </div>
 
@@ -1290,7 +1350,10 @@
       selectedAnswer: null,
       answerChecked: false,
       matchingState: null,
-      wordBankAnswer: []
+      wordBankAnswer: [],
+      dailyGoal: 30,
+      dailyXp: 0,
+      dailyXpDate: null
     };
 
     // Load state from localStorage
@@ -1301,6 +1364,7 @@
         Object.assign(state, parsed);
       }
       checkStreak();
+      refreshDailyXp();
     }
 
     function saveState() {
@@ -1311,7 +1375,10 @@
         gems: state.gems,
         completedLessons: state.completedLessons,
         learnedVocab: state.learnedVocab,
-        lastPlayDate: state.lastPlayDate
+        lastPlayDate: state.lastPlayDate,
+        dailyGoal: state.dailyGoal,
+        dailyXp: state.dailyXp,
+        dailyXpDate: state.dailyXpDate
       }));
     }
 
@@ -1323,6 +1390,27 @@
       if (state.lastPlayDate && state.lastPlayDate !== today && state.lastPlayDate !== yesterday) {
         state.streak = 0;
       }
+    }
+
+
+
+    function refreshDailyXp() {
+      const today = new Date().toDateString();
+      if (state.dailyXpDate !== today) {
+        state.dailyXpDate = today;
+        state.dailyXp = 0;
+      }
+    }
+
+    function renderDailyGoal() {
+      refreshDailyXp();
+      const goal = state.dailyGoal || 30;
+      const progress = Math.min(100, Math.round((state.dailyXp / goal) * 100));
+      document.getElementById('dailyGoalValue').textContent = `${state.dailyXp}/${goal} XP`;
+      document.getElementById('dailyGoalFill').style.width = `${progress}%`;
+      document.getElementById('dailyGoalText').textContent = progress >= 100
+        ? '素晴らしい！今日の目標を達成しました 🎉'
+        : `あと${Math.max(goal - state.dailyXp, 0)}XPで目標達成です。`;
     }
 
     function updateTopBar() {
@@ -1342,6 +1430,7 @@
         document.getElementById('navHome').classList.add('active');
         document.getElementById('bottomNav').classList.remove('hidden');
         document.getElementById('topBar').style.display = 'flex';
+        renderDailyGoal();
         renderLessonPath();
       } else if (name === 'quiz') {
         document.getElementById('quizScreen').classList.add('active');
@@ -1707,6 +1796,8 @@
       const accuracy = Math.round((state.correctInLesson / state.totalInLesson) * 100);
 
       state.xp += xpEarned;
+      refreshDailyXp();
+      state.dailyXp += xpEarned;
       if (!state.completedLessons.includes(unit.id)) {
         state.completedLessons.push(unit.id);
       }
@@ -1814,6 +1905,7 @@
     // ===== INIT =====
     loadState();
     updateTopBar();
+    renderDailyGoal();
     renderLessonPath();
   </script>
 </body>
